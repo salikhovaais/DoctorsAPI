@@ -20,6 +20,7 @@ namespace DoctorsAPI.Controllers
             _logger = logger;
         }
 
+
         [HttpGet(Name = "GetWeatherForecast"), Authorize(Roles = "Admin")]
 
         public IEnumerable<WeatherForecast> Get()
