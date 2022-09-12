@@ -17,28 +17,90 @@ namespace DoctorsAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<Doctor>>> Get()
+        public async Task<ActionResult<List<Doctor>>> Get(int clinicId)
         {
-            return Ok(await _context.Doctors.ToListAsync());
+            var doctors = await _context.Doctors
+                .Where(c => c.ClinicId == clinicId)
+                .Include(c => c.Service)
+                .Include(c => c.Patients)
+                
+                .ToListAsync();
+
+            return doctors;
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Doctor>> Get(int id)
-        {
-            var doc = await _context.Doctors.FindAsync(id);
-            if (doc == null)
-                return BadRequest("Doctor not found.");
-            return Ok(doc);
-        }
+        //[HttpGet("{id}")]
+        //public async Task<ActionResult<Doctor>> Get(int id)
+        //{
+        //    var doc = await _context.Doctors.FindAsync(id);
+        //    if (doc == null)
+        //        return BadRequest("Doctor not found.");
+        //    return Ok(doc);
+        //}
 
         [HttpPost]
-        public async Task<ActionResult<List<Doctor>>> AddDoctor(Doctor doc)
+        public async Task<ActionResult<List<Doctor>>> AddDoctor(CreateDoctor request)
         {
-            _context.Doctors.Add(doc);
+            var clinic = await _context.Clinics.FindAsync(request.ClinicId);
+            if (clinic == null)
+                return NotFound();
+
+            var newDoctor = new Doctor{
+                Name = request.Name,
+                Clinic = clinic
+            };
+
+            _context.Doctors.Add(newDoctor);
             await _context.SaveChangesAsync();
 
-            return Ok(await _context.Doctors.ToListAsync());
+            return await Get(newDoctor.ClinicId);
         }
+
+
+        [HttpPost("service")]
+        public async Task<ActionResult<Doctor>> AddService(AddService request)
+        {
+            var doctor = await _context.Doctors.FindAsync(request.DoctorId);
+            if (doctor == null)
+                return NotFound();
+
+            var newService = new Service
+            {
+                Name = request.Name,
+                Price = request.Price,
+                Doctor = doctor
+            };
+
+            _context.Services.Add(newService);
+            await _context.SaveChangesAsync();
+
+            return doctor;
+        }
+
+        [HttpPost("patient")]
+        public async Task<ActionResult<Doctor>> AddDoctorAndPatient(AddDoctorPatient request)
+        {
+            var doctor = await _context.Doctors
+                .Where(c => c.Id == request.DoctorId)
+                .Include(c => c.Patients)
+                .FirstOrDefaultAsync();
+
+            if (doctor == null)
+                return NotFound();
+
+            var patient = await _context.Patients.FindAsync(request.PatientId);
+            if (patient == null)
+                return NotFound();
+
+            doctor.Patients.Add(patient);
+
+            await _context.SaveChangesAsync();
+
+            return doctor;
+        }
+
+
+        
 
         [HttpPut]
         public async Task<ActionResult<List<Doctor>>> UpdateDoctor(Doctor request)
@@ -52,12 +114,11 @@ namespace DoctorsAPI.Controllers
             dbDoc.LastName = request.LastName;
             dbDoc.Place = request.Place;
 
+            //_context.Doctors.Add(dbDoc);
             await _context.SaveChangesAsync();
 
             return Ok(await _context.Doctors.ToListAsync());
         }
-
-        
 
         [HttpDelete ("{id}")]
         public async Task<ActionResult<List<Doctor>>> Delete(int id)

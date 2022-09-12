@@ -1,4 +1,6 @@
-﻿namespace DoctorsAPI
+﻿using System.Text.Json.Serialization;
+
+namespace DoctorsAPI
 {
     public class Doctor
     {
@@ -8,5 +10,17 @@
         public string LastName { get; set; } = string.Empty;
         public string Place { get; set; } = string.Empty;
 
+
+        [JsonIgnore]
+        public Clinic Clinic { get; set; }
+        public int ClinicId { get; set; }
+        public Service Service { get; set; }
+        public List<Patient> Patients { get; set; }
+        
+
+  
+        
+
     }
+
 }
