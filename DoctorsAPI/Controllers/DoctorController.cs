@@ -29,14 +29,22 @@ namespace DoctorsAPI.Controllers
             return doctors;
         }
 
-        //[HttpGet("{id}")]
-        //public async Task<ActionResult<Doctor>> Get(int id)
-        //{
-        //    var doc = await _context.Doctors.FindAsync(id);
-        //    if (doc == null)
-        //        return BadRequest("Doctor not found.");
-        //    return Ok(doc);
-        //}
+        [HttpGet("{name}")]
+        public async Task<ActionResult<Doctor>> GetName(string name)
+        {
+
+            var doc = await _context.Doctors
+                .Where(c => c.Name == name)
+                .Include(c => c.Service)
+                .Include(c => c.Patients)
+
+                .ToListAsync(); 
+            
+            
+            if (doc == null)
+                return BadRequest("Doctor not found.");
+            return Ok(doc);
+        }
 
         [HttpPost]
         public async Task<ActionResult<List<Doctor>>> AddDoctor(CreateDoctor request)
